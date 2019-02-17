@@ -9,13 +9,12 @@
 import UIKit
 import ArcGIS
 import HoundifySDK
+import AVFoundation
 
 class ViewController: UIViewController {
     
     var mapView: AGSMapView!
     var animationView: UIView?
-
-    
     
     // ESRI
     private func setupMap() {
@@ -42,15 +41,25 @@ class ViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        //Add Notifications
+        NotificationCenter.default.addObserver(self, selector: #selector(handle(houndVoiceSearchStateChangeNotification:)), name: .HoundVoiceSearchStateChange, object: nil)
+        
         // Observe HoundVoiceSearchHotPhrase to be notified of when the hot phrase is detected.
-//        NotificationCenter.default.addObserver(self, selector: #selector(handle(houndVoiceSearchHotPhraseNotification:)), name: .HoundVoiceSearchHotPhrase, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handle(houndVoiceSearchHotPhraseNotification:)), name: .HoundVoiceSearchHotPhrase, object: nil)
 //
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print(error)
+        }
         startListeningForHotPhrase()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         NotificationCenter.default.removeObserver(self)
+        self.dismissSearch()
     }
     
     // thx tech bro
@@ -88,16 +97,45 @@ class ViewController: UIViewController {
         
         // Houndify.presentListingViewController(...) will activate audio if necessary, but
         // if you wish to support beginning voice queries with a hot phrase, you will need to
-        // explicitly start HoundVoiceSearch listening.
         
+        
+        // explicitly start HoundVoiceSearch listening.
         HoundVoiceSearch.instance().startListening(completionHandler: { (error: Error?) in
             if let error = error {
                 print(error.localizedDescription)
             } else {
                 HoundVoiceSearch.instance().enableHotPhraseDetection = true
-                self.activateVoiceSearch()
+//                self.activateVoiceSearch()
             }
         })
+    }
+    
+    @objc func handle(houndVoiceSearchStateChangeNotification notification: Notification) {
+        var statusString = ""
+        
+        switch HoundVoiceSearch.instance().state {
+        case .none:
+            // Don't update UI when audio is disabled for backgrounding.
+            if UIApplication.shared.applicationState == .active {
+                statusString = ""
+                 }
+        case .ready:
+            statusString = "Listening"
+     
+        case .recording:
+            statusString = "Recording"
+          
+        case .searching:
+            statusString = "Searching"
+        case .speaking:
+            statusString = "Speaking"
+        }
+    
+    }
+    
+    
+    @objc func handle(houndVoiceSearchHotPhraseNotification notification: Notification) {
+        activateVoiceSearch()
     }
     
     func activateVoiceSearch() {
