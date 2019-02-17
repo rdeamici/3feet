@@ -8,15 +8,31 @@
 
 import UIKit
 import CoreData
+import Firebase
+import HoundifySDK
+
+// client id: cs6QUlyadjf_0k8MLZJhkA==
+// client key: qb8vUNRa0nYdFzi3vEIoOK1qJU0yAt01MFApgpPRbBsJn1l6lvO7UaN8dhN3NjRIuJBj6OsZds32_HsDCkfw8Q==
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-
-
+    var db: Firestore!
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        
+        Hound.setClientID("cs6QUlyadjf_0k8MLZJhkA==")
+        Hound.setClientKey("qb8vUNRa0nYdFzi3vEIoOK1qJU0yAt01MFApgpPRbBsJn1l6lvO7UaN8dhN3NjRIuJBj6OsZds32_HsDCkfw8Q==")
+        
+        window = UIWindow(frame: UIScreen.main.bounds)
+        window?.makeKeyAndVisible()
+        window?.rootViewController = UINavigationController(rootViewController: ViewController())
+        
+        FirebaseApp.configure()
+        db = Firestore.firestore()
+ 
+        
         return true
     }
 
